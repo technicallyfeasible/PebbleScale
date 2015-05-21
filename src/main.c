@@ -39,6 +39,15 @@ void handle_final(Measurement m) {
 	
 }
 
+static void dashed_line(GContext *ctx, GPoint p, int width, int l1, int l2) {
+	int x = p.x + width;
+	while (p.x < x) {
+		for (int i = 0; i < l1 && p.x < x; i++, p.x++)
+			graphics_draw_pixel(ctx, p);
+		p.x += l2;
+	}
+}
+
 static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 	if (!is_measuring() || cur_data == NULL)
 		return;
@@ -48,6 +57,7 @@ static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 	const int16_t mid = frame.size.h - GRAPH_HEIGHT;
 	const float step = (float) cur_num_samples / (float) frame.size.w;
 	graphics_context_set_fill_color(ctx, GColorWhite);
+	graphics_context_set_stroke_color(ctx, GColorWhite);
 	for (int i = 0; i < frame.size.w; i++) {
 		int16_t h = (int32_t) (cur_data[(int)(i * step)] - cur_offset) * GRAPH_HEIGHT / SAMP_MAX;
 		int16_t y;
@@ -60,6 +70,9 @@ static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 		graphics_fill_rect(ctx, GRect(i, y, 1, h), 0, GCornerNone);
 	}
 	graphics_fill_rect(ctx, GRect(0, frame.size.h - 2 * GRAPH_HEIGHT, frame.size.w, 1), 0, GCornerNone);
+	dashed_line(ctx, GPoint(0, frame.size.h - 1.75 * GRAPH_HEIGHT), frame.size.w, 1, 1);
+	dashed_line(ctx, GPoint(0, frame.size.h - GRAPH_HEIGHT), frame.size.w, 2, 2);
+	dashed_line(ctx, GPoint(0, frame.size.h - 0.25 * GRAPH_HEIGHT), frame.size.w, 1, 1);
 
 	// display text
 	char str[16], str2[16];
