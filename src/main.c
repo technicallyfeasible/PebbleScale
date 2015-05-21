@@ -124,7 +124,9 @@ static void init(void) {
 	font_medium = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
 	font_tiny = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 	font_symbols = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_UNICONS_28));
+	
 	init_measure();
+	calibrations_load();
 
 	window = window_create();
   window_set_window_handlers(window, (WindowHandlers) {

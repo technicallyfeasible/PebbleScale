@@ -122,7 +122,10 @@ static void accel_callback(AccelRawData *data, uint32_t num_samples, uint64_t ti
 	// add new measurements scaled into fft range
 	int j = 0;
 	for (uint i = NUM_POINTS - num_samples; i < NUM_POINTS; i++, j++) {
-		int32_t val = (((int32_t) data[j].z * SAMP_MAX / MAX_VALUE));
+		// do later: adapt to any swinging direction
+		//float len = mySqrt((int32_t) data[j].x * data[j].x + (int32_t) data[j].y * data[j].y + (int32_t) data[j].z * data[j].z);
+		int32_t len = data[j].z;
+		int32_t val = (((int32_t) len * SAMP_MAX / MAX_VALUE));
 		if (val > SAMP_MAX) val = SAMP_MAX;
 		if (val < -SAMP_MAX) val = -SAMP_MAX;
 		fft_in[i] = val;

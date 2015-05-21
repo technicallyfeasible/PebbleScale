@@ -40,3 +40,11 @@ static char* floatStr(char *out, float num, int decimals) {
 	out[offset] = 0;
 	return out;
 }
+
+static inline float mySqrt(const float x) {
+	const float xhalf = 0.5f*x;
+	union { float x; int i; 	} u;
+	u.x = x;
+	u.i = 0x5f3759df - (u.i >> 1);
+	return x*u.x*(1.5f - xhalf*u.x*u.x);
+}

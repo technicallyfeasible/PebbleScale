@@ -12,6 +12,9 @@ static int16_t weight;
 Measurement calibrations[MAX_CALIBRATIONS];
 static int16_t calibrations_count;
 
+static const int32_t storage_calibrations_count = 0xAFFFF + 10;
+static const int32_t storage_calibrations = 0xAFFFF + 11;
+
 
 void calibrate_handle_measure(kiss_fft_scalar *data, uint32_t num_samples, kiss_fft_scalar offset, Measurement m) {
 	m.weight = weight;
@@ -22,9 +25,26 @@ void calibrate_handle_measure(kiss_fft_scalar *data, uint32_t num_samples, kiss_
 }
 
 void calibrate_handle_final(Measurement m) {
-	// store the measurement and stop measuring
-	m.weight = weight;
-	calibrations[calibrations_count++] = m;
+	// store the measurement
+	// check if same weight already exists and average both if it does
+	Measurement *mf = NULL;
+	for (int i = 0; i < calibrations_count; i++) {
+		if (calibrations[i].weight != weight)
+			continue;
+		mf = &calibrations[i];
+		mf->amp = (mf->amp + m.amp) / 2;
+		mf->freq = (mf->freq + m.freq) / 2;
+		mf->confidence = (mf->confidence + m.confidence) / 2;
+		break;
+	}
+	if (mf == NULL) {
+		m.weight = weight;
+		calibrations[calibrations_count++] = m;
+	}
+	// store
+	calibrations_save();
+	
+	// stop measuring and update layers
 	stop_measure();
 	layer_mark_dirty(text_layer);
 	layer_mark_dirty(graph_layer);
@@ -213,4 +233,20 @@ void calibrate_page_close() {
 		return;
 	window_destroy(calibrate_window);
 	calibrate_window = NULL;
+}
+
+void calibrations_save() {
+	status_t s = persist_write_int(storage_calibrations_count, calibrations_count);
+	if (calibrations_count > 0) {
+		int w = persist_write_data(storage_calibrations, calibrations, sizeof(Measurement) * calibrations_count);
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "written: %d, %d", w, (int) s);
+	}
+}
+void calibrations_load() {
+	calibrations_count = 0;
+	if (!persist_exists(storage_calibrations_count))
+		return;
+	calibrations_count = persist_read_int(storage_calibrations_count);
+	int w = persist_read_data(storage_calibrations, calibrations, sizeof(calibrations));
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "read: %d", w);
 }
