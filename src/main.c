@@ -35,11 +35,14 @@ void handle_measure(kiss_fft_scalar *data, uint32_t num_samples, kiss_fft_scalar
 	measurement = m;
 	layer_mark_dirty(graph_layer);
 }
+void handle_final(Measurement m) {
+	
+}
 
 static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 	if (!is_measuring() || cur_data == NULL)
 		return;
-	const GRect frame = window_frame;
+	GRect frame = layer_get_frame(me);
 
 	// display graph
 	const int16_t mid = frame.size.h - GRAPH_HEIGHT;
@@ -84,7 +87,7 @@ void click_handler_select(ClickRecognizerRef recognizer, void *context) {
 	if (is_measuring())
 		stop_measure();
 	else
-		start_measure((MeasureHandler) handle_measure, NULL);
+		start_measure((MeasureHandler) handle_measure, (FinalMeasureHandler) handle_final);
 	layer_mark_dirty(icon_layer);
 }
 void click_handler_down(ClickRecognizerRef recognizer, void *context) {

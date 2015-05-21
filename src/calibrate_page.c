@@ -10,7 +10,7 @@ static Layer *icon_layer;
 
 static int16_t weight;
 Measurement calibrations[MAX_CALIBRATIONS];
-static int16_t calibrations_count;
+int16_t calibrations_count;
 
 static const int32_t storage_calibrations_count = 0xAFFFF + 10;
 static const int32_t storage_calibrations = 0xAFFFF + 11;
