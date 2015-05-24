@@ -9,10 +9,17 @@
     "resources": {
         "media": [
             {
-                "characterRegex": "[1357cet]",
+                "characterRegex": "[1357cet\\?]",
+                "file": "fonts/unicons_30.ttf",
+                "name": "FONT_UNICONS_18",
+                "trackingAdjust": -8,
+                "type": "font"
+            },
+            {
+                "characterRegex": "[1357cet\\?]",
                 "file": "fonts/unicons_30.ttf",
                 "name": "FONT_UNICONS_28",
-                "trackingAdjust": -10,
+                "trackingAdjust": -8,
                 "type": "font"
             }
         ]

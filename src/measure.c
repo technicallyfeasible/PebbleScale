@@ -66,11 +66,11 @@ static void do_measure() {
 	float freq = (float)(SAMPLE_RATE * avgF) / (2 * NUM_POINTS);
 	float amp = (float) max * (MAX_VALUE / (1000.0 * SAMP_MAX));
 	float confidence = sum / outerSum;
-	char str[16], str2[16], str3[16];
+/*	char str[16], str2[16], str3[16];
 	floatStr(str, confidence, 2);
 	floatStr(str2, amp, 2);
 	floatStr(str3, freq, 2);
-//APP_LOG(APP_LOG_LEVEL_DEBUG, "C: %s, A: %s, F: %s", str, str2, str3);
+APP_LOG(APP_LOG_LEVEL_DEBUG, "C: %s, A: %s, F: %s", str, str2, str3);*/
 	if (callback != NULL) {
 		callback(fft_in, NUM_POINTS, offset, Measurement(confidence, freq, amp));
 	}
@@ -79,7 +79,7 @@ static void do_measure() {
 	if (final_callback != NULL) {
 		// keep measuring while confidence > 1
 		if (confidence < 0.5) {
-APP_LOG(APP_LOG_LEVEL_DEBUG, "reset: confidence");
+//APP_LOG(APP_LOG_LEVEL_DEBUG, "reset: confidence");
 			// reset all values
 			avg_m_count = 0;
 		} else {
@@ -90,7 +90,7 @@ APP_LOG(APP_LOG_LEVEL_DEBUG, "reset: confidence");
 				avg_m.freq = 0;
 				avg_m.amp  = 0;
 			} else if (df > 1) {
-APP_LOG(APP_LOG_LEVEL_DEBUG, "reset: amp/freq");
+//APP_LOG(APP_LOG_LEVEL_DEBUG, "reset: amp/freq");
 				avg_m_count = 0;
 				avg_m.freq = 0;
 				avg_m.amp  = 0;
@@ -101,8 +101,8 @@ APP_LOG(APP_LOG_LEVEL_DEBUG, "reset: amp/freq");
 			avg_m.freq += freq;
 			avg_m.amp += amp;
 
-			char stra[16], stra2[16], stra3[16];
-APP_LOG(APP_LOG_LEVEL_DEBUG, "%s: C: %d, A: %s, F: %s, F: %s", str, avg_m_count, floatStr(stra, avg_m.amp, 2), floatStr(stra2, avg_m.freq / avg_m_count, 2), floatStr(stra3, freq, 2));
+//			char stra[16], stra2[16], stra3[16];
+//APP_LOG(APP_LOG_LEVEL_DEBUG, "%s: C: %d, A: %s, F: %s, F: %s", str, avg_m_count, floatStr(stra, avg_m.amp, 2), floatStr(stra2, avg_m.freq / avg_m_count, 2), floatStr(stra3, freq, 2));
 
 			// if we have 3 good values then invoke the callback
 			if (avg_m_count >= 3) {
@@ -130,7 +130,7 @@ static void accel_callback(AccelRawData *data, uint32_t num_samples, uint64_t ti
 		if (val < -SAMP_MAX) val = -SAMP_MAX;
 		fft_in[i] = val;
 	}
-	if (next_draw++ >= 4) {
+	if (next_draw++ >= 2) {
 		next_draw = 0;
 		do_measure();
 	}
