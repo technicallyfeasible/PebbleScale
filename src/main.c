@@ -53,6 +53,8 @@ static const char *text_main_can_measure = "Start --->";
 static const char *text_main_weight_result = "%dg";
 static const char *text_main_measurement_failed = "Measurement failed. You might need more calibration values.";
 static const char *text_main_measure_hint = "Move hand up and down in a steady motion";
+static const char *text_main_frequency = "Freq";
+static const char *text_main_amplitude = "\nAmp";
 
 
 /**
@@ -127,10 +129,16 @@ static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 	if (measurement.confidence <= 0.2) {
 		graphics_draw_text(ctx, text_main_measure_hint, font_medium, text_frame, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
 	} else {
-		floatStr(str, measurement.freq, 2);
-		floatStr(str2, measurement.amp, 2);
-		graphics_draw_text(ctx, str, font_large, GRect(frame.size.w/2, 0, frame.size.w/2, 50), GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
-		graphics_draw_text(ctx, str2, font_large, GRect(0, 0, frame.size.w/2, 50), GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
+		int h = frame.size.h - 2 * GRAPH_HEIGHT;
+		// line 1: frequency
+		GRect info_frame = GRect(0, 0, frame.size.w, h / 2);
+		snprintf(str, sizeof(str), "%sHz", floatStr(str2, measurement.freq, 2));
+		graphics_draw_text(ctx, text_main_frequency, font_medium, info_frame, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
+		graphics_draw_text(ctx, str, font_medium, info_frame, GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
+		// line 2: amplitude
+		snprintf(str, sizeof(str), "\n%s", floatStr(str2, measurement.amp, 2));
+		graphics_draw_text(ctx, text_main_amplitude, font_medium, info_frame, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
+		graphics_draw_text(ctx, str, font_medium, info_frame, GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
 	}
 }
 

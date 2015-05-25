@@ -4,10 +4,16 @@
         ""
     ],
     "companyName": "techfeasible",
-    "longName": "Scale",
+    "longName": "Scalerometer",
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/PebbleScale.png",
+                "menuIcon": true,
+                "name": "IMAGE_LOGO",
+                "type": "png"
+            },
             {
                 "characterRegex": "[1357cet\\?]",
                 "file": "fonts/unicons_30.ttf",
@@ -25,13 +31,13 @@
         ]
     },
     "sdkVersion": "3",
-    "shortName": "Scale",
+    "shortName": "Scalerometer",
     "targetPlatforms": [
         "aplite",
         "basalt"
     ],
     "uuid": "2dc40554-c358-4514-a53f-81c9b1665a33",
-    "versionLabel": "0.1",
+    "versionLabel": "1.0",
     "watchapp": {
         "watchface": false
     }

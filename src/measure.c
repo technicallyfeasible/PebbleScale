@@ -130,7 +130,7 @@ static void accel_callback(AccelRawData *data, uint32_t num_samples, uint64_t ti
 		if (val < -SAMP_MAX) val = -SAMP_MAX;
 		fft_in[i] = val;
 	}
-	if (next_draw++ >= 2) {
+	if (next_draw++ >= 4) {
 		next_draw = 0;
 		do_measure();
 	}

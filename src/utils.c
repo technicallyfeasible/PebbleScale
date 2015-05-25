@@ -97,20 +97,20 @@ void draw_line(GContext *ctx, GPoint start, GPoint end, int l1, int l2) {
 			sy = -1;
 		}
 
-		GPoint dp, yAdd, xAdd;
+		GPoint yAdd, xAdd;
 		int16_t dx = end.x - start.x;
 		int16_t dy = sy * (end.y - start.y);
-		int16_t ex = end.x;
+		int16_t x, ex = end.x;
 		if (dy > dx) {
 			t = dy; dy = dx; dx = t;
 			yAdd = GPoint(1, 0);
 			xAdd = GPoint(0, sy);
-			dp = GPoint(sy * (start.y + 1), start.x);
+			x = sy * (start.y + 1);
 			ex = sy * end.y;
 		} else {
 			yAdd = GPoint(0, sy);
 			xAdd = GPoint(1, 0);
-			dp = GPoint(start.x + 1, start.y);
+			x = start.x + 1;
 		}
 
 		int16_t d = (dy << 1) - dx;
@@ -118,11 +118,12 @@ void draw_line(GContext *ctx, GPoint start, GPoint end, int l1, int l2) {
 		if (l > 0)
 			graphics_draw_pixel(ctx, start);
 
-		GPoint p = GPoint(start.x + xAdd.x, start.y + xAdd.y);
-		while (dp.x <= ex) {
+		start.x += xAdd.x;
+		start.y += xAdd.y;
+		while (x <= ex) {
 			if (d > 0) {
-				p.x += yAdd.x;
-				p.y += yAdd.y;
+				start.x += yAdd.x;
+				start.y += yAdd.y;
 				d += (dy << 1) - (dx << 1);
 			} else {
 				d += (dy << 1);
@@ -131,10 +132,10 @@ void draw_line(GContext *ctx, GPoint start, GPoint end, int l1, int l2) {
 			if (l <= -l2)
 				l = l1;
 			if (l > 0)
-				graphics_draw_pixel(ctx, p);
-			p.x += xAdd.x;
-			p.y += xAdd.y;
-			dp.x++;
+				graphics_draw_pixel(ctx, start);
+			start.x += xAdd.x;
+			start.y += xAdd.y;
+			x++;
 		}
 	}
 }

@@ -9,7 +9,7 @@ static Layer *graph_layer;
 static Layer *icon_layer;
 
 static int16_t weight;
-Measurement calibrations[MAX_CALIBRATIONS];
+static Measurement calibrations[MAX_CALIBRATIONS];
 int16_t calibrations_count;
 float beta[3] = { -250, -250, 1000 };
 
@@ -25,6 +25,9 @@ Long-press middle to delete all values.";
 
 
 void calibrate_handle_measure(kiss_fft_scalar *data, uint32_t num_samples, kiss_fft_scalar offset, Measurement m) {
+	// only update good values
+	if (m.confidence < 0.2)
+		return;
 	m.weight = weight;
 	calibrations[calibrations_count] = m;
 	
@@ -64,39 +67,36 @@ void calibrate_handle_final(Measurement m) {
 static void text_layer_update_callback(Layer *me, GContext *ctx) {
 	const GRect frame = layer_get_frame(me);
 	graphics_context_set_fill_color(ctx, GColorWhite);
-	char str[16];
+	char str[8];
 	snprintf(str, sizeof(str), "%dg", weight);
 	graphics_draw_text(ctx, str, font_medium, frame, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
 
-	if (calibrations_count >= 3) {
-		if (is_measuring()) {
-			Measurement m = calibrations[calibrations_count];
-			floatStr(str, m.amp, 2);
-			int len = strlen(str);
-			str[len++] = '-';
-			floatStr(str + len, m.freq, 2);
-		} else {
-			Measurement *m;
-			float maxWeight = 1, maxFreq = 0.01, maxAmp = 0.01;
-			for (int i = 0; i < calibrations_count; i++) {
-				m = &calibrations[i];
-				if (m->weight > maxWeight)
-					maxWeight = m->weight;
-				if (m->freq > maxFreq)
-					maxFreq = m->freq;
-				if (m->amp > maxAmp)
-					maxAmp = m->amp;
-			}
-
-			floatStr(str, maxFreq, 2);
-			int len = strlen(str);
-			str[len++] = ' ';
-			str[len++] = '/';
-			str[len++] = ' ';
-			floatStr(str + len, maxAmp, 2);
+	str[0] = 0;
+	if (is_measuring()) {
+		Measurement m = calibrations[calibrations_count];
+		floatStr(str, m.freq, 2);
+		int len = strlen(str);
+		str[len++] = '\n';
+		floatStr(str + len, m.amp, 2);
+	} else if (calibrations_count >= 3) {
+		Measurement *m;
+		float maxWeight = 1, maxFreq = 0.01, maxAmp = 0.01;
+		for (int i = 0; i < calibrations_count; i++) {
+			m = &calibrations[i];
+			if (m->weight > maxWeight)
+				maxWeight = m->weight;
+			if (m->freq > maxFreq)
+				maxFreq = m->freq;
+			if (m->amp > maxAmp)
+				maxAmp = m->amp;
 		}
-		graphics_draw_text(ctx, str, font_tiny, GRect(0, frame.size.h - 15, frame.size.w, 15), GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
+
+		floatStr(str, maxFreq, 2);
+		int len = strlen(str);
+		str[len++] = '\n';
+		floatStr(str + len, maxAmp, 2);
 	}
+	graphics_draw_text(ctx, str, font_tiny, GRect(0, frame.size.h - 30, frame.size.w, 30), GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
 }
 static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 	const GRect frame = layer_get_frame(me);
@@ -142,7 +142,7 @@ static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 
 	// draw lines of constant weight for steps of 50g
 	if (calibrations_count >= 3) {
-		char str[16];
+		char str[8];
 		float w = -50;
 		do {
 			w += 50;
@@ -173,6 +173,7 @@ static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 			if (bottomAmp > maxAmp)
 				continue;
 			GPoint p2 = GPoint(5 + (bottomFreq - minFreq) * (frame.size.w - 10) / (maxFreq - minFreq), frame.size.h - 5 - (bottomAmp - minAmp) * (frame.size.h - 10) / (maxAmp - minAmp));
+			//APP_LOG(APP_LOG_LEVEL_DEBUG, "p1: %dx%d, p2: %dx%d", p1.x, p1.y, p2.x, p2.y);
 			draw_line(ctx, p1, p2, 1, 2);
 			// draw weight over line
 			center_text_point(ctx, floatStr(str, w, 0), font_tiny, GPoint((p1.x + p2.x) / 2, (p1.y + p2.y) / 2));
@@ -346,8 +347,8 @@ void fit_data() {
 	};
 	
 	// start with initial parameter guess and iterate a few times
-	char str1[8], str2[8], str3[8], str4[8];
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "A: %s, F: %s, W: %s", floatStr(str1, beta[0], 2), floatStr(str2, beta[1], 2), floatStr(str3, beta[2], 2));
+	//char str1[8], str2[8], str3[8], str4[8];
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "A: %s, F: %s, W: %s", floatStr(str1, beta[0], 2), floatStr(str2, beta[1], 2), floatStr(str3, beta[2], 2));
 	for (int k = 0; k < 5; k++) {
 		// calculate JT*r(ß)
 		float A = 0, F = 0, W = 0;
@@ -362,10 +363,10 @@ void fit_data() {
 		beta[0] -= A * inv[0] + F * inv[1] + W * inv[2];
 		beta[1] -= A * inv[3] + F * inv[4] + W * inv[5];
 		beta[2] -= A * inv[6] + F * inv[7] + W * inv[8];
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "A: %s, F: %s, W: %s", floatStr(str1, beta[0], 2), floatStr(str2, beta[1], 2), floatStr(str3, beta[2], 2));
+		//APP_LOG(APP_LOG_LEVEL_DEBUG, "A: %s, F: %s, W: %s", floatStr(str1, beta[0], 2), floatStr(str2, beta[1], 2), floatStr(str3, beta[2], 2));
 	}
 
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "w(0,0): %s, w(0,maxF): %s, w(maxA,0): %s, w(maxA,maxF): %s", floatStr(str1, beta[2], 2), floatStr(str2, beta[1]*maxFreq+beta[2], 2), floatStr(str3, beta[0]*maxAmp+beta[2], 2), floatStr(str4, beta[0]*maxAmp+beta[1]*maxFreq+beta[2], 2));
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "w(0,0): %s, w(0,maxF): %s, w(maxA,0): %s, w(maxA,maxF): %s", floatStr(str1, beta[2], 2), floatStr(str2, beta[1]*maxFreq+beta[2], 2), floatStr(str3, beta[0]*maxAmp+beta[2], 2), floatStr(str4, beta[0]*maxAmp+beta[1]*maxFreq+beta[2], 2));
 }
 
 void calibrations_save() {
