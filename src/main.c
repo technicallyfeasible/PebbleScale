@@ -12,7 +12,7 @@ static GRect window_frame;
 static Layer *graph_layer;
 static Layer *icon_layer;
 
-GFont /*font_huge, */font_large, font_medium, font_tiny, font_symbols, font_symbols_small;
+GFont font_huge, font_large, font_medium, font_tiny, font_symbols, font_symbols_small;
 
 static kiss_fft_scalar *cur_data;
 static uint32_t cur_num_samples;
@@ -94,8 +94,7 @@ static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 			graphics_draw_text(ctx, text_main_need_calibration, font_medium, text_frame, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
 		} else if (final_weight >= 0) {
 			snprintf(str, sizeof(str), text_main_weight_result, (int) final_weight);
-			// center_text(ctx, str, font_huge, center_frame);
-			center_text(ctx, str, font_large, center_frame);
+			center_text(ctx, str, font_huge, center_frame);
 		} else if (final_weight == -1) {
 			center_text(ctx, text_main_can_measure, font_large, center_frame);
 		} else if (final_weight == -2) {
@@ -234,7 +233,7 @@ void main_page_close() {
 }
 
 static void init(void) {
-	// font_huge = fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
+	font_huge = fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
 	font_large = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
 	font_medium = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
 	font_tiny = fonts_get_system_font(FONT_KEY_GOTHIC_14);

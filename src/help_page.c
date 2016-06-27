@@ -40,7 +40,7 @@ static void help_window_load(Window *window) {
   layer_add_child(window_layer, scroll_layer_get_layer(scroll_layer));
   text_layer = text_layer_create(GRect(5, 3, window_frame.size.w - 10, window_frame.size.h * 10));
   scroll_layer_add_child(scroll_layer, text_layer_get_layer(text_layer));
-	text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+	text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
 	text_layer_set_text(text_layer, help_text);
 	GSize size = text_layer_get_content_size(text_layer);
 	size.h = max(window_frame.size.h, size.h + 10);

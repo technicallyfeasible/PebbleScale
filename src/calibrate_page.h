@@ -2,7 +2,7 @@
 #include "main.h"
 #include "measure.h"
 
-#define MAX_CALIBRATIONS	16
+#define MAX_CALIBRATIONS	8
 
 extern int16_t calibrations_count;
 extern float beta[3];
