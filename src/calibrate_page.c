@@ -9,6 +9,7 @@ static Layer *graph_layer;
 static Layer *icon_layer;
 
 static int16_t weight;
+#pragma pack(4)
 static Measurement calibrations[MAX_CALIBRATIONS];
 int16_t calibrations_count;
 float beta[3] = { -250, -250, 1000 };
@@ -21,7 +22,7 @@ static char *text_calibrate_initial = "\
 1. Select weight (+ / -)\n\
 2. Start calibration with middle button\n\
 At least 3 more values needed...\n\n\
-Long-press middle to delete all values.";
+Long-press middle to delete current value";
 
 
 void calibrate_handle_measure(kiss_fft_scalar *data, uint32_t num_samples, kiss_fft_scalar offset, Measurement m) {
@@ -67,37 +68,76 @@ void calibrate_handle_final(Measurement m) {
 static void text_layer_update_callback(Layer *me, GContext *ctx) {
 	const GRect frame = layer_get_frame(me);
 	graphics_context_set_fill_color(ctx, GColorWhite);
-	char str[8];
+	char str[32];
+	
+	// draw current weight
 	snprintf(str, sizeof(str), "%dg", weight);
 	graphics_draw_text(ctx, str, font_medium, frame, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
 
 	str[0] = 0;
 	if (is_measuring()) {
+		// while measuring, draw frequency and amplitude
 		Measurement m = calibrations[calibrations_count];
 		floatStr(str, m.freq, 2);
 		int len = strlen(str);
 		str[len++] = '\n';
 		floatStr(str + len, m.amp, 2);
-	} else if (calibrations_count >= 3) {
-		Measurement *m;
-		float maxWeight = 1, maxFreq = 0.01, maxAmp = 0.01;
+	} else if (calibrations_count > 0) {
+		// when not measuring draw next calibrated weight for selection
+		// calibration values are not sorted by weight
+		int16_t dw, minDw = -1, w = 0;
 		for (int i = 0; i < calibrations_count; i++) {
-			m = &calibrations[i];
-			if (m->weight > maxWeight)
-				maxWeight = m->weight;
-			if (m->freq > maxFreq)
-				maxFreq = m->freq;
-			if (m->amp > maxAmp)
-				maxAmp = m->amp;
+			dw = (int16_t) calibrations[i].weight - (int16_t) weight;
+			if (minDw >= 0 && (dw < 0 || dw >= minDw))
+				continue;
+			minDw = dw;
+			w = (int16_t) calibrations[i].weight;
 		}
-
-		floatStr(str, maxFreq, 2);
-		int len = strlen(str);
-		str[len++] = '\n';
-		floatStr(str + len, maxAmp, 2);
+		snprintf(str, sizeof(str), "next\n%dg", w);
 	}
 	graphics_draw_text(ctx, str, font_tiny, GRect(0, frame.size.h - 30, frame.size.w, 30), GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
 }
+
+static bool draw_calibration_line(GContext *ctx, GRect frame, float w, bool drawWeight, float minFreq, float maxFreq, float minAmp, float maxAmp) {
+	// invert weight = beta[0] * amp + beta[1] * freq + beta[2] for constant weight
+	// try top area first, if frequency is outside range then calculate amp instead
+	float topAmp = maxAmp;
+	float topFreq = (w - beta[0] * maxAmp - beta[2]) / beta[1];
+	if (topFreq < minFreq || topFreq > maxFreq) {
+		if (topFreq < minFreq) topFreq = minFreq;
+		else topFreq = maxFreq;
+		topAmp = (w - beta[1] * topFreq - beta[2]) / beta[0];
+	}
+	if (topAmp < minAmp)
+		return false;
+	if (topFreq > maxFreq) 
+		return true;
+	GPoint p1 = GPoint(5 + (topFreq - minFreq) * (frame.size.w - 10) / (maxFreq - minFreq), frame.size.h - 5 - (topAmp - minAmp) * (frame.size.h - 10) / (maxAmp - minAmp));
+	// try bottom area, if frequency is outside range then calculate amp instead
+	float bottomAmp = minAmp;
+	float bottomFreq = (w - beta[0] * minAmp - beta[2]) / beta[1];
+	if (bottomFreq < minFreq || bottomFreq > maxFreq) {
+		if (bottomFreq > maxFreq) bottomFreq = maxFreq;
+		else bottomFreq = minFreq;
+		bottomAmp = (w - beta[1] * bottomFreq - beta[2]) / beta[0];
+	}
+	if (bottomFreq < minFreq)
+		return false;
+	if (bottomAmp > maxAmp)
+		return true;
+	GPoint p2 = GPoint(5 + (bottomFreq - minFreq) * (frame.size.w - 10) / (maxFreq - minFreq), frame.size.h - 5 - (bottomAmp - minAmp) * (frame.size.h - 10) / (maxAmp - minAmp));
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "p1: %dx%d, p2: %dx%d", p1.x, p1.y, p2.x, p2.y);
+	if (!drawWeight)
+		graphics_draw_line(ctx, p1, p2);
+	else {
+		draw_line(ctx, p1, p2, 1, 2);
+		// draw weight over line
+		char str[8];
+		center_text_point(ctx, floatStr(str, w, 0), font_tiny, GPoint((p1.x + p2.x) / 2, (p1.y + p2.y) / 2));
+	}
+	return true;
+}
+
 static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 	const GRect frame = layer_get_frame(me);
 	graphics_context_set_fill_color(ctx, GColorWhite);
@@ -134,49 +174,20 @@ static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 		if (r < 1) r = 1;
 		int16_t x = (5 + (m->freq - minFreq) * (frame.size.w - 10) / (maxFreq - minFreq));
 		int16_t y = (frame.size.h - 5 - (m->amp - minAmp) * (frame.size.h - 10) / (maxAmp - minAmp));
-		if (i == calibrations_count)
-			graphics_draw_circle(ctx, GPoint(x, y), r);
-		else
+		if (i == calibrations_count || m->weight == weight)
 			graphics_fill_circle(ctx, GPoint(x, y), r);
+		else
+			graphics_draw_circle(ctx, GPoint(x, y), r);
 	}
 
 	// draw lines of constant weight for steps of 50g
 	if (calibrations_count >= 3) {
-		char str[8];
-		float w = -50;
+		draw_calibration_line(ctx, frame, weight, false, minFreq, maxFreq, minAmp, maxAmp);
+		float w = 0;
 		do {
+			if (!draw_calibration_line(ctx, frame, w, true, minFreq, maxFreq, minAmp, maxAmp))
+				break;
 			w += 50;
-			// invert weight = beta[0] * amp + beta[1] * freq + beta[2] for constant weight
-			// try top area first, if frequency is outside range then calculate amp instead
-			float topAmp = maxAmp;
-			float topFreq = (w - beta[0] * maxAmp - beta[2]) / beta[1];
-			if (topFreq < minFreq || topFreq > maxFreq) {
-				if (topFreq < minFreq) topFreq = minFreq;
-				else topFreq = maxFreq;
-				topAmp = (w - beta[1] * topFreq - beta[2]) / beta[0];
-			}
-			if (topAmp < minAmp)
-				break;
-			if (topFreq > maxFreq) 
-				continue;
-			GPoint p1 = GPoint(5 + (topFreq - minFreq) * (frame.size.w - 10) / (maxFreq - minFreq), frame.size.h - 5 - (topAmp - minAmp) * (frame.size.h - 10) / (maxAmp - minAmp));
-			// try bottom area, if frequency is outside range then calculate amp instead
-			float bottomAmp = minAmp;
-			float bottomFreq = (w - beta[0] * minAmp - beta[2]) / beta[1];
-			if (bottomFreq < minFreq || bottomFreq > maxFreq) {
-				if (bottomFreq > maxFreq) bottomFreq = maxFreq;
-				else bottomFreq = minFreq;
-				bottomAmp = (w - beta[1] * bottomFreq - beta[2]) / beta[0];
-			}
-			if (bottomFreq < minFreq)
-				break;
-			if (bottomAmp > maxAmp)
-				continue;
-			GPoint p2 = GPoint(5 + (bottomFreq - minFreq) * (frame.size.w - 10) / (maxFreq - minFreq), frame.size.h - 5 - (bottomAmp - minAmp) * (frame.size.h - 10) / (maxAmp - minAmp));
-			//APP_LOG(APP_LOG_LEVEL_DEBUG, "p1: %dx%d, p2: %dx%d", p1.x, p1.y, p2.x, p2.y);
-			draw_line(ctx, p1, p2, 1, 2);
-			// draw weight over line
-			center_text_point(ctx, floatStr(str, w, 0), font_tiny, GPoint((p1.x + p2.x) / 2, (p1.y + p2.y) / 2));
 		} while (w <= 1000);
 	}
 }
@@ -231,11 +242,23 @@ static void calibrate_click_handler_updown(ClickRecognizerRef recognizer, void *
 static void calibrate_click_handler_long_select(ClickRecognizerRef recognizer, void *context) {
 	if (is_measuring())
 		return;
-	weight = 0;
-	calibrations_count = 0;
-	calibrations_save();
-	layer_mark_dirty(text_layer);
-	layer_mark_dirty(graph_layer);
+	// delete the current weight measurements
+	bool found = false;
+	for (int i = 0; i < calibrations_count; i++) {
+		float w = calibrations[i].weight;
+		if (abs(w - weight) >= 1)
+			continue;
+		found = true;
+		if (i < (calibrations_count - 1))
+			memcpy(&calibrations[i], &calibrations[i + 1], sizeof(Measurement) * (calibrations_count - 1 - i));
+		calibrations_count--;
+		i--;
+	}
+	if (found) {
+		calibrations_save();
+		layer_mark_dirty(text_layer);
+		layer_mark_dirty(graph_layer);
+	}
 }
 static void calibrate_click_handler_long_select_release(ClickRecognizerRef recognizer, void *context) {
 }

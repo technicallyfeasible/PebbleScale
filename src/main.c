@@ -12,7 +12,7 @@ static GRect window_frame;
 static Layer *graph_layer;
 static Layer *icon_layer;
 
-GFont font_huge, font_large, font_medium, font_tiny, font_symbols, font_symbols_small;
+GFont /*font_huge, */font_large, font_medium, font_tiny, font_symbols, font_symbols_small;
 
 static kiss_fft_scalar *cur_data;
 static uint32_t cur_num_samples;
@@ -36,7 +36,7 @@ Don't expect miracles in accuracy but here is how it works:\n\n\
 2. Start measuring by pressing the middle button.\n\
 3. Move your hand up and down repeatedly, making sure to keep a constant effort. This means the heavier the item is, the slower your hand will move.\n\
 4. Your Pebble will buzz shortly when the measurement has been taken.\n\n\
-Have fun weighing things and be sure to let me know how it works for you at jens.elstner@keepzer.com!\n\n\n\
+Have fun weighing things and be sure to let me know how it works for you at jens.elstner@technicallyfeasible.com!\n\n\n\
 Click here ------>\n\n\n\
 now to continue with calibration\n";
 static const char *help_text_main = "\
@@ -44,8 +44,7 @@ Weighing\n\n\
 1. Hold the object in the hand where you are wearing Pebble.\n\
 2. Press the middle button to start.\n\
 3. Move your hand up and down, making sure that it takes the same effort like during calibration. The better you can keep the same effort, the more accurate your measurement will be.\n\
-4. Pebble will buzz shortly to let you know when a value was measured and show the weight on the screen.\n\
-5. Repeat steps to measure another weight.\n";
+4. Pebble will buzz shortly to let you know when a value was measured and show the weight on the screen.";
 static const char *text_main_need_calibration = "\
 Not enough calibration values.\n\n\
 Proceed to calibration --->";
@@ -95,7 +94,8 @@ static void graph_layer_update_callback(Layer *me, GContext *ctx) {
 			graphics_draw_text(ctx, text_main_need_calibration, font_medium, text_frame, GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
 		} else if (final_weight >= 0) {
 			snprintf(str, sizeof(str), text_main_weight_result, (int) final_weight);
-			center_text(ctx, str, font_huge, center_frame);
+			// center_text(ctx, str, font_huge, center_frame);
+			center_text(ctx, str, font_large, center_frame);
 		} else if (final_weight == -1) {
 			center_text(ctx, text_main_can_measure, font_large, center_frame);
 		} else if (final_weight == -2) {
@@ -185,7 +185,7 @@ void click_handler(ClickRecognizerRef recognizer, void *context) {
 void help_handler_first_steps(ClickRecognizerRef recognizer, void *context) {
 	help_page_close();
 	main_page_open();
-	calibrate_page_open();
+	// calibrate_page_open();
 }
 void click_config(Window *window) {
 	window_single_click_subscribe(BUTTON_ID_SELECT, click_handler);
@@ -234,7 +234,7 @@ void main_page_close() {
 }
 
 static void init(void) {
-	font_huge = fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
+	// font_huge = fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
 	font_large = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
 	font_medium = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
 	font_tiny = fonts_get_system_font(FONT_KEY_GOTHIC_14);

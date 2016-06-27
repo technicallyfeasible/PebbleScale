@@ -1,0 +1,53 @@
+{
+    "author": "techfeasible",
+    "dependencies": {},
+    "keywords": [],
+    "name": "scalerometer",
+    "pebble": {
+        "capabilities": [
+            ""
+        ],
+        "displayName": "Scalerometer",
+        "enableMultiJS": true,
+        "messageKeys": [],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "file": "images/PebbleScale.png",
+                    "memoryFormat": "1Bit",
+                    "menuIcon": true,
+                    "name": "IMAGE_LOGO",
+                    "spaceOptimization": "memory",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "characterRegex": "[1357cet\\?]",
+                    "file": "fonts/unicons_30.ttf",
+                    "name": "FONT_UNICONS_18",
+                    "trackingAdjust": -8,
+                    "type": "font"
+                },
+                {
+                    "characterRegex": "[1357cet\\?]",
+                    "file": "fonts/unicons_30.ttf",
+                    "name": "FONT_UNICONS_28",
+                    "trackingAdjust": -8,
+                    "type": "font"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "chalk"
+        ],
+        "uuid": "2dc40554-c358-4514-a53f-81c9b1665a33",
+        "watchapp": {
+            "watchface": false
+        }
+    },
+    "version": "1.1.0"
+}
